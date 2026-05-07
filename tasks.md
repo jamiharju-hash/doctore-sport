@@ -1,1164 +1,677 @@
-# DOCTORE AI — Implementation Backlog
+# DOCTORE AI — tasks.md
 
-**Document:** `tasks.md`  
-**Purpose:** Break `spec.md` into bite-sized implementation tasks.  
-**Rule:** Complete planning, contracts, and server-side infrastructure before dashboard polish.
-
----
-
-## 0. Build Order
-
-Use this exact order:
-
-```txt
-1. spec.md
-2. domain contracts
-3. server auth helper
-4. Firestore server repositories
-5. calculation functions
-6. bet ledger endpoints
-7. bankroll endpoints
-8. market snapshot endpoints
-9. decision evaluate endpoint
-10. CLV endpoint
-11. market profile recalculation
-12. minimal decision UI
-13. ledger/admin review UI
-14. landing/pricing sync
-15. onboarding
-```
-
-Do not start from the dashboard.
+## Build Principle
 
 Start from the system of record.
 
----
+Do not start from dashboards, visual polish, automation, social features, or model complexity.
 
-## Milestone 1 — Specification Lock
+Canonical build order:
 
-### Goal
-
-Create the canonical planning baseline before implementation.
-
-### Tasks
-
-- [ ] Add `spec.md` to project root.
-- [ ] Add `tasks.md` to project root.
-- [ ] Lock product definition.
-- [ ] Lock MVP scope.
-- [ ] Lock plan names.
-- [ ] Lock plan prices.
-- [ ] Decide which plan the current Stripe link maps to.
-- [ ] Confirm MVP sport scope.
-- [ ] Confirm active MVP models.
-- [ ] Mark dependent models inactive until required external feeds exist.
-
-### Acceptance Criteria
-
-- [ ] No conflicting plan prices.
-- [ ] No unclear MVP scope.
-- [ ] No implementation code exists before system boundaries are clear.
-- [ ] Project language does not describe DOCTORE AI as a tipster app, pick feed, sportsbook, or social betting product.
+Ledger
+→ snapshots
+→ model price
+→ risk sizing
+→ CLV
+→ market approval
+→ decision-only UI
 
 ---
 
-## Milestone 2 — Project Structure Baseline
+# Milestone 0 — Project Lock
 
-### Goal
+## Tasks
 
-Prepare the folder structure before domain implementation.
+- [ ] Commit `spec.md`
+- [ ] Commit `tasks.md`
+- [ ] Lock pricing:
+  - PRO: 49€/month
+  - SHARP: 199€/month
+  - INFRA: custom / 1000€+
+- [ ] Decide which plan the Stripe link maps to
+- [ ] Lock MVP sport scope:
+  - MLB first
+  - Football documented only
+  - KBO later
+- [ ] Lock MVP model scope:
+  - manual model probability input
+  - model version logging
+  - no retraining UI
+  - no public betting percentage dependency
 
-### Recommended Structure
+## Definition of Done
 
-```txt
-app/
-  api/
-  (marketing)/
-  (app)/
-components/
-  app/
-  marketing/
-  ui/
-hooks/
-lib/
-  contracts/
-  domain/
-  server/
-    auth/
-    firebase/
-    repositories/
-    services/
-  utils/
-tests/
-  unit/
-  integration/
-  e2e/
-```
-
-### Tasks
-
-- [ ] Confirm Next.js App Router structure.
-- [ ] Create `lib/contracts`.
-- [ ] Create `lib/domain`.
-- [ ] Create `lib/server`.
-- [ ] Create `lib/server/auth`.
-- [ ] Create `lib/server/firebase`.
-- [ ] Create `lib/server/repositories`.
-- [ ] Create `lib/server/services`.
-- [ ] Create `tests/unit`.
-- [ ] Create `tests/integration`.
-- [ ] Create `tests/e2e`.
-
-### Acceptance Criteria
-
-- [ ] Domain logic has a dedicated location.
-- [ ] Server-only logic has a dedicated location.
-- [ ] UI components do not contain betting math.
-- [ ] Page/layout shells do not contain domain logic.
+- No conflicting pricing exists
+- No unclear MVP scope remains
+- No implementation starts before data ownership and flows are clear
 
 ---
 
-## Milestone 3 — Domain Contracts
+# Milestone 1 — Domain Contracts
 
-### Goal
+## Goal
 
-Define all persisted and API-facing structures before repositories or endpoints.
+Define all persisted data structures and request/response contracts before building endpoints.
 
-### Tasks
+## Tasks
 
-- [ ] Define role contract.
-- [ ] Define plan contract.
-- [ ] Define user contract.
-- [ ] Define bankroll state contract.
-- [ ] Define bet contract.
-- [ ] Define market snapshot contract.
-- [ ] Define model prediction contract.
-- [ ] Define decision record contract.
-- [ ] Define CLV record contract.
-- [ ] Define risk exposure contract.
-- [ ] Define market profile contract.
-- [ ] Define model version contract.
-- [ ] Define audit event contract.
-- [ ] Define request/response DTO conventions.
-- [ ] Separate persistence models from DTOs where shapes differ.
-- [ ] Add Zod schemas for persisted data.
-- [ ] Add Zod schemas for API requests.
-- [ ] Add Zod schemas for API responses where useful.
+- [ ] Create `User` contract
+- [ ] Create `BankrollState` contract
+- [ ] Create `Bet` contract
+- [ ] Create `MarketSnapshot` contract
+- [ ] Create `ModelPrediction` contract
+- [ ] Create `DecisionRecord` contract
+- [ ] Create `ClvRecord` contract
+- [ ] Create `MarketProfile` contract
+- [ ] Create `AuditEvent` contract
+- [ ] Define enums:
+  - role
+  - plan
+  - sport
+  - league
+  - market
+  - bet status
+  - snapshot phase
+  - decision state
+  - decision reason
+- [ ] Separate persistence models from DTOs where needed
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] All persisted data structures are defined.
-- [ ] DTOs are separated from persistence models where needed.
-- [ ] No endpoint can accept unvalidated request data.
-- [ ] No `any` types are used without explicit justification.
-
----
-
-## Milestone 4 — Firebase Server Foundation
-
-### Goal
-
-Set up server-only Firebase access.
-
-### Tasks
-
-- [ ] Add Firebase Admin initialization module.
-- [ ] Validate required Firebase Admin environment variables.
-- [ ] Prevent Firebase Admin import from client code.
-- [ ] Add typed Firestore instance export for server use.
-- [ ] Add Firebase Auth Admin export.
-- [ ] Document server-only import rules.
-
-### Acceptance Criteria
-
-- [ ] Firebase Admin is never imported in Client Components.
-- [ ] Protected Firestore access is server-only.
-- [ ] Environment variables are validated at startup or access time.
-- [ ] Missing env configuration fails explicitly.
+- All collections have a typed contract
+- All endpoint payloads have a planned DTO
+- No `any` is required for domain data
 
 ---
 
-## Milestone 5 — Server Auth Helper
+# Milestone 2 — Firebase Server Auth
 
-### Goal
+## Goal
 
-Centralize role, plan, and session authorization.
+Create the server-side access layer.
 
-### Tasks
+## Tasks
 
-- [ ] Implement session cookie verification helper.
-- [ ] Parse Firebase custom claims.
-- [ ] Validate role claim.
-- [ ] Validate plan claim.
-- [ ] Add `requireAppUser` helper.
-- [ ] Add role guard.
-- [ ] Add plan guard.
-- [ ] Add ownership guard.
-- [ ] Add authorization error mapping.
-- [ ] Add tests for missing session.
-- [ ] Add tests for invalid role.
-- [ ] Add tests for insufficient plan.
-- [ ] Add tests for insufficient role.
+- [ ] Configure Firebase Admin server-only initialization
+- [ ] Create session cookie verification helper
+- [ ] Parse custom claims:
+  - role
+  - plan
+  - assignedManagerId
+- [ ] Create `requireAppUser`
+- [ ] Create `assertRole`
+- [ ] Create `assertPlan`
+- [ ] Create error mapping:
+  - `UNAUTHORIZED`
+  - `FORBIDDEN`
+  - `PLAN_REQUIRED`
+- [ ] Add baseline Firestore security rules
+- [ ] Block protected client-side Firestore reads/writes
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] Every protected endpoint can verify user identity.
-- [ ] Every protected endpoint can enforce role.
-- [ ] Every protected endpoint can enforce plan.
-- [ ] UI visibility is not treated as authorization.
-
----
-
-## Milestone 6 — Firestore Security Rules Baseline
-
-### Goal
-
-Block unauthorized direct client access.
-
-### Tasks
-
-- [ ] Write baseline Firestore rules.
-- [ ] Allow users to read only permitted own data where appropriate.
-- [ ] Block direct writes to protected collections.
-- [ ] Restrict admin-only collections.
-- [ ] Restrict project manager permissions.
-- [ ] Add rules tests if emulator is configured.
-- [ ] Document that protected data must go through API endpoints.
-
-### Protected Collections
-
-```txt
-bets
-bankrollStates
-marketSnapshots
-modelPredictions
-decisionRecords
-clvRecords
-riskExposure
-marketProfiles
-auditEvents
-systemConfigs
-```
-
-### Acceptance Criteria
-
-- [ ] Client cannot directly write protected betting data.
-- [ ] Client cannot read another user’s protected data.
-- [ ] Admin-only data is not accessible to non-admin users.
-- [ ] Firestore rules match server authorization assumptions.
+- Protected endpoints can verify identity
+- Role and plan checks are server-side
+- UI visibility is not treated as security
 
 ---
 
-## Milestone 7 — Calculation Functions
+# Milestone 3 — Firestore Server Repositories
 
-### Goal
+## Goal
 
-Create deterministic betting math.
+Centralize all protected database access server-side.
 
-### Tasks
+## Tasks
 
-- [ ] Implement implied probability calculation.
-- [ ] Implement fair odds calculation.
-- [ ] Implement edge calculation.
-- [ ] Implement Kelly fraction calculation.
-- [ ] Implement Fractional Kelly cap.
-- [ ] Implement CLV calculation.
-- [ ] Implement market approval rule.
-- [ ] Implement risk-cap decision helper.
-- [ ] Add rounding policy.
-- [ ] Add invalid-input behavior.
-- [ ] Add unit tests for normal cases.
-- [ ] Add unit tests for boundary cases.
-- [ ] Add unit tests for invalid odds.
-- [ ] Add unit tests for invalid probability.
-- [ ] Add unit tests for risk caps.
+- [ ] Create `bets` repository
+- [ ] Create `bankrollStates` repository
+- [ ] Create `marketSnapshots` repository
+- [ ] Create `modelPredictions` repository
+- [ ] Create `decisionRecords` repository
+- [ ] Create `clvRecords` repository
+- [ ] Create `marketProfiles` repository
+- [ ] Create `auditEvents` repository
+- [ ] Add pagination support for bet ledger
+- [ ] Add user ownership filters
+- [ ] Add server timestamp handling
+- [ ] Add transaction support for execution flow
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] All betting math has unit tests.
-- [ ] No UI performs betting math.
-- [ ] All functions are deterministic.
-- [ ] All invalid inputs fail safely.
-- [ ] Kelly output cannot produce negative stake.
+- No protected Firestore operation is performed from a Client Component
+- All reads/writes go through server repositories
+- Execution-critical writes can run transactionally
 
 ---
 
-## Milestone 8 — Firestore Server Repositories
+# Milestone 4 — Betting Math Core
 
-### Goal
+## Goal
 
-Create server-only persistence access.
+Implement deterministic, tested betting math.
 
-### Repositories
+## Tasks
 
-- [ ] Users repository.
-- [ ] Bankroll repository.
-- [ ] Bets repository.
-- [ ] Market snapshots repository.
-- [ ] Model predictions repository.
-- [ ] Decision records repository.
-- [ ] CLV records repository.
-- [ ] Risk exposure repository.
-- [ ] Market profiles repository.
-- [ ] Model versions repository.
-- [ ] Audit events repository.
-- [ ] System configs repository.
+- [ ] Implement implied probability calculation
+- [ ] Implement fair odds calculation
+- [ ] Implement edge calculation
+- [ ] Implement Kelly fraction calculation
+- [ ] Implement Fractional Kelly cap
+- [ ] Implement max risk per bet cap
+- [ ] Implement max daily risk cap
+- [ ] Implement max open exposure cap
+- [ ] Implement CLV calculation
+- [ ] Implement market approval calculation
+- [ ] Add unit tests for all functions
 
-### Required Repository Behavior
+## Definition of Done
 
-- [ ] Create record.
-- [ ] Read by ID.
-- [ ] Query by user ID where needed.
-- [ ] Paginate lists.
-- [ ] Validate persistence shape before write.
-- [ ] Map Firestore data to domain model.
-- [ ] Avoid unbounded queries.
-- [ ] Add composite index notes where needed.
-
-### Acceptance Criteria
-
-- [ ] All protected Firestore reads/writes are server-side only.
-- [ ] Repository functions do not accept unvalidated raw data.
-- [ ] Repository functions return typed domain objects.
-- [ ] Large lists are paginated or bounded.
+- UI does not calculate betting math
+- All formulas are server-safe and deterministic
+- Edge, Kelly, and CLV behavior is unit-tested
 
 ---
 
-## Milestone 9 — Audit Event Service
+# Milestone 5 — Bankroll System
 
-### Goal
+## Goal
 
-Create append-only audit logging for sensitive operations.
+Make bankroll and exposure state reliable before execution.
 
-### Tasks
+## Tasks
 
-- [ ] Define audit event types.
-- [ ] Create audit event writer.
-- [ ] Add audit events for bankroll config changes.
-- [ ] Add audit events for role changes.
-- [ ] Add audit events for plan changes.
-- [ ] Add audit events for manual bet deletion or voiding.
-- [ ] Add audit events for manual CLV override.
-- [ ] Add audit events for model activation.
-- [ ] Add audit events for market approval override.
-- [ ] Add tests for audit event creation.
+- [ ] Create `GET /api/bankroll`
+- [ ] Create `PATCH /api/bankroll`
+- [ ] Initialize default bankroll state
+- [ ] Validate risk config changes
+- [ ] Audit bankroll changes
+- [ ] Track open exposure
+- [ ] Track daily risk used
+- [ ] Release exposure on settlement
+- [ ] Prevent invalid risk config:
+  - negative bankroll
+  - Kelly multiplier above allowed cap
+  - max risk per bet above system limit
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] Sensitive changes are never silent.
-- [ ] Audit events include entity type and entity ID.
-- [ ] Audit events include before/after where relevant.
-- [ ] Audit events are append-only.
-
----
-
-## Milestone 10 — Bankroll Service
-
-### Goal
-
-Manage bankroll state and exposure safely.
-
-### Tasks
-
-- [ ] Create default bankroll state initializer.
-- [ ] Read current bankroll.
-- [ ] Update bankroll configuration.
-- [ ] Apply open bet exposure.
-- [ ] Release exposure on settlement.
-- [ ] Track daily risk used.
-- [ ] Track open exposure.
-- [ ] Validate max risk per bet.
-- [ ] Validate max daily risk.
-- [ ] Validate max open exposure.
-- [ ] Audit bankroll config changes.
-- [ ] Add tests for exposure increase.
-- [ ] Add tests for exposure release.
-- [ ] Add tests for daily cap reached.
-- [ ] Add tests for open exposure cap reached.
-
-### Acceptance Criteria
-
-- [ ] Bankroll state is always consistent with open exposure.
-- [ ] Risk config changes are audited.
-- [ ] Exposure cannot exceed configured caps.
-- [ ] Bankroll updates are server-side only.
+- User has a valid bankroll state
+- Risk config changes are audited
+- Open exposure can be derived from active bets
 
 ---
 
-## Milestone 11 — Bet Ledger Endpoints
+# Milestone 6 — Bet Ledger
 
-### Goal
+## Goal
 
-Allow a user to log and read bets.
+Allow a user to log a bet with all required pricing and risk fields.
 
-### Endpoints
+## Tasks
 
-- [ ] `GET /api/bets`
-- [ ] `POST /api/bets`
-- [ ] `GET /api/bets/:betId`
-- [ ] `PATCH /api/bets/:betId/settle`
-- [ ] `POST /api/bets/import`
-- [ ] `GET /api/bets/export`
+- [ ] Create `POST /api/bets`
+- [ ] Create `GET /api/bets`
+- [ ] Create `GET /api/bets/:betId`
+- [ ] Create `PATCH /api/bets/:betId/settle`
+- [ ] Validate required bet fields:
+  - sport
+  - league
+  - market
+  - selection
+  - bookmaker
+  - entry odds
+  - stake
+  - model probability
+  - placed timestamp
+- [ ] Calculate fair odds on creation
+- [ ] Calculate edge on creation
+- [ ] Link bet to decision record where applicable
+- [ ] Create audit event for manual bet creation
+- [ ] Support paginated ledger reads
 
-### Required Create-Bet Fields
+## Definition of Done
 
-```txt
-odds
-stake
-market
-selection
-bookmaker
-model probability
-timestamp
-```
-
-### Tasks
-
-- [ ] Validate request with Zod.
-- [ ] Verify session.
-- [ ] Verify plan access.
-- [ ] Calculate implied probability.
-- [ ] Calculate fair odds.
-- [ ] Calculate edge.
-- [ ] Create entry snapshot.
-- [ ] Create bet record.
-- [ ] Update exposure.
-- [ ] Create audit event.
-- [ ] Return DTO.
-- [ ] Add integration tests.
-
-### Acceptance Criteria
-
-- [ ] A user can log a bet.
-- [ ] Bet includes odds, stake, market, model probability, and timestamp.
-- [ ] Bet is persisted server-side.
-- [ ] Invalid bet request is rejected.
-- [ ] Created bet is visible in Bet Journal.
+- A user can log a bet
+- Bet includes odds, stake, market, model probability, and timestamp
+- Bet is stored server-side only
+- Invalid bet payloads are rejected
 
 ---
 
-## Milestone 12 — Market Snapshot Endpoints
+# Milestone 7 — Market Snapshots
 
-### Goal
+## Goal
 
-Store odds at open, entry, close, and intermediate phases.
+Create auditable entry and closing price records.
 
-### Endpoints
+## Tasks
 
-- [ ] `POST /api/market-snapshots`
-- [ ] `GET /api/market-snapshots/:snapshotId`
-- [ ] `POST /api/bets/:betId/closing-snapshot`
+- [ ] Create `POST /api/market-snapshots`
+- [ ] Support snapshot phases:
+  - open
+  - entry
+  - close
+  - intermediate
+- [ ] Calculate implied probability for each snapshot
+- [ ] Link entry snapshot to bet
+- [ ] Link closing snapshot to bet
+- [ ] Store source/bookmaker
+- [ ] Add validation for odds format
+- [ ] Add snapshot audit metadata
 
-### Tasks
+## Definition of Done
 
-- [ ] Validate snapshot request.
-- [ ] Normalize bookmaker name.
-- [ ] Normalize odds format to decimal odds.
-- [ ] Calculate implied probability.
-- [ ] Store source.
-- [ ] Store collected timestamp.
-- [ ] Link entry snapshot to bet.
-- [ ] Link closing snapshot to bet.
-- [ ] Add tests for snapshot creation.
-- [ ] Add tests for close snapshot linkage.
-
-### Acceptance Criteria
-
-- [ ] Every bet can be tied to entry market state.
-- [ ] Every completed bet can later be tied to closing market state.
-- [ ] Snapshot phase is explicit.
-- [ ] Odds are normalized before persistence.
+- Every bet can have an entry snapshot
+- Every bet can later receive a close snapshot
+- Entry and close prices are independently reconstructable
 
 ---
 
-## Milestone 13 — Decision Evaluation Endpoint
+# Milestone 8 — Decision Evaluation
 
-### Goal
+## Goal
 
-Return `ACCEPT`, `REJECT`, or `WAIT` from validated inputs.
+Return ACCEPT / REJECT / WAIT from controlled server logic.
 
-### Endpoint
+## Tasks
 
-- [ ] `POST /api/decisions/evaluate`
+- [ ] Create `POST /api/decisions/evaluate`
+- [ ] Validate input:
+  - game
+  - market
+  - selection
+  - bookmaker
+  - odds
+  - model probability
+  - confidence score
+- [ ] Load bankroll state
+- [ ] Load market profile
+- [ ] Calculate implied probability
+- [ ] Calculate fair odds
+- [ ] Calculate edge
+- [ ] Calculate Fractional Kelly stake
+- [ ] Check exposure limits
+- [ ] Check confidence threshold
+- [ ] Check market approval status
+- [ ] Return:
+  - decision
+  - edge
+  - confidence
+  - risk
+  - stake
+  - reasons
+  - expiry
+- [ ] Write decision record
 
-### Tasks
+## Definition of Done
 
-- [ ] Validate request with Zod.
-- [ ] Verify session.
-- [ ] Load bankroll state.
-- [ ] Load market profile.
-- [ ] Load or receive model prediction.
-- [ ] Calculate market implied probability.
-- [ ] Calculate fair odds.
-- [ ] Calculate edge.
-- [ ] Check minimum edge threshold.
-- [ ] Check confidence threshold.
-- [ ] Check market approval.
-- [ ] Check risk exposure.
-- [ ] Calculate Kelly stake.
-- [ ] Apply Fractional Kelly cap.
-- [ ] Generate decision reasons.
-- [ ] Write decision record.
-- [ ] Return decision DTO.
-- [ ] Add unit tests for decision branches.
-- [ ] Add integration tests for endpoint.
-
-### Acceptance Criteria
-
-- [ ] Endpoint returns only `ACCEPT`, `REJECT`, or `WAIT`.
-- [ ] Every response includes reasons.
-- [ ] Every accepted response includes stake sizing.
-- [ ] Every decision is auditable.
-- [ ] No frontend math is required.
-
----
-
-## Milestone 14 — Execution Endpoint
-
-### Goal
-
-Convert an accepted decision into an immutable bet ledger entry.
-
-### Endpoint
-
-- [ ] `POST /api/executions`
-
-### Tasks
-
-- [ ] Validate execution request.
-- [ ] Verify session.
-- [ ] Load decision record.
-- [ ] Verify decision is still active.
-- [ ] Verify decision belongs to user.
-- [ ] Verify decision state is `ACCEPT`.
-- [ ] Re-run risk validation.
-- [ ] Require idempotency key.
-- [ ] Prevent duplicate execution.
-- [ ] Create bet record.
-- [ ] Link entry snapshot.
-- [ ] Update bankroll exposure.
-- [ ] Initialize CLV tracking placeholder.
-- [ ] Write audit event.
-- [ ] Return execution result.
-- [ ] Add duplicate execution tests.
-- [ ] Add risk revalidation tests.
-
-### Acceptance Criteria
-
-- [ ] Duplicate execution requests do not create duplicate bets.
-- [ ] Expired decisions cannot be executed.
-- [ ] Rejected or wait decisions cannot be executed.
-- [ ] Execution updates ledger and exposure atomically where possible.
+- Endpoint returns only ACCEPT, REJECT, or WAIT
+- Every decision has reasons
+- Every accepted decision has stake sizing
+- Decision is persisted for audit
 
 ---
 
-## Milestone 15 — CLV Endpoint
+# Milestone 9 — Execution Flow
 
-### Goal
+## Goal
 
-Calculate and store closing-line value.
+Convert an accepted decision into a ledger entry safely.
 
-### Endpoints
+## Tasks
 
-- [ ] `POST /api/clv/calculate`
-- [ ] `GET /api/clv/summary`
+- [ ] Create `POST /api/executions`
+- [ ] Validate decision exists
+- [ ] Validate decision has not expired
+- [ ] Re-check risk before execution
+- [ ] Re-check duplicate execution key
+- [ ] Create bet record
+- [ ] Create entry snapshot
+- [ ] Update bankroll exposure
+- [ ] Initialize CLV tracking
+- [ ] Write audit event
+- [ ] Return execution result
 
-### Tasks
+## Definition of Done
 
-- [ ] Validate closing odds input.
-- [ ] Load bet.
-- [ ] Load entry snapshot.
-- [ ] Load or create closing snapshot.
-- [ ] Calculate entry implied probability.
-- [ ] Calculate closing implied probability.
-- [ ] Calculate CLV percentage.
-- [ ] Determine beat-close boolean.
-- [ ] Write CLV record.
-- [ ] Link CLV record to bet.
-- [ ] Trigger market profile update or queue recalculation.
-- [ ] Add tests for positive CLV.
-- [ ] Add tests for negative CLV.
-- [ ] Add tests for missing closing odds.
-- [ ] Add tests for invalid bet status.
-
-### Acceptance Criteria
-
-- [ ] Every completed bet can receive CLV measurement.
-- [ ] CLV is calculated from entry vs close.
-- [ ] Bet-level CLV is persisted.
-- [ ] CLV summary can be returned by user.
+- Duplicate execution requests cannot create duplicate bets
+- Bet creation and exposure update are transaction-safe
+- Execution is auditable
 
 ---
 
-## Milestone 16 — Market Profile Recalculation
+# Milestone 10 — CLV Engine
 
-### Goal
+## Goal
 
-Approve or reject market segments based on realized evidence.
+Measure whether execution beat the closing market.
 
-### Endpoint
+## Tasks
 
-- [ ] `POST /api/market-profiles/recalculate`
-- [ ] `GET /api/market-profiles`
+- [ ] Create `POST /api/clv/calculate`
+- [ ] Accept closing odds input
+- [ ] Validate bet exists
+- [ ] Validate entry odds exist
+- [ ] Create closing snapshot if needed
+- [ ] Calculate entry implied probability
+- [ ] Calculate closing implied probability
+- [ ] Calculate CLV %
+- [ ] Determine `beatClose`
+- [ ] Create CLV record
+- [ ] Link CLV record to bet
+- [ ] Trigger or queue market profile recalculation
 
-### Tasks
+## Definition of Done
 
-- [ ] Create segment key generator.
-- [ ] Aggregate bets by segment.
-- [ ] Calculate sample size.
-- [ ] Calculate average CLV.
-- [ ] Calculate CLV hit rate.
-- [ ] Calculate ROI.
-- [ ] Calculate win rate.
-- [ ] Calculate average edge.
-- [ ] Calculate average odds.
-- [ ] Apply early approval rule.
-- [ ] Add rejection reason.
-- [ ] Store market profile.
-- [ ] Add tests for insufficient sample.
-- [ ] Add tests for positive CLV approval.
-- [ ] Add tests for negative CLV rejection.
-- [ ] Add tests for ROI not overriding CLV.
-
-### Acceptance Criteria
-
-- [ ] Markets are not approved without sample size.
-- [ ] Negative CLV markets are blocked.
-- [ ] ROI alone cannot approve a market.
-- [ ] Decision engine checks market approval before returning `ACCEPT`.
+- Every completed bet can receive CLV
+- CLV is stored as first-class data
+- CLV is not treated as secondary analytics
 
 ---
 
-## Milestone 17 — Risk Exposure API
+# Milestone 11 — Market Profile Recalculation
 
-### Goal
+## Goal
 
-Make current exposure visible system-wide.
+Approve or reject markets using realized evidence.
 
-### Endpoints
+## Tasks
 
-- [ ] `GET /api/risk`
-- [ ] `PATCH /api/risk/config`
+- [ ] Create segment key generator
+- [ ] Define segment dimensions:
+  - sport
+  - league
+  - market
+  - bookmaker
+  - favorite/underdog
+  - odds bucket
+  - confidence bucket
+  - model version
+- [ ] Aggregate:
+  - sample size
+  - bet count
+  - avg CLV
+  - CLV hit rate
+  - ROI
+  - win rate
+  - profit/loss
+- [ ] Apply early approval rule
+- [ ] Apply rejection reasons
+- [ ] Create `POST /api/market-profiles/recalculate`
+- [ ] Create `GET /api/market-profiles`
+- [ ] Audit manual overrides
 
-### Tasks
+## Definition of Done
 
-- [ ] Return current bankroll.
-- [ ] Return open exposure.
-- [ ] Return daily risk used.
-- [ ] Return remaining risk capacity.
-- [ ] Return max risk per bet.
-- [ ] Return max daily risk.
-- [ ] Return max open exposure.
-- [ ] Return exposure by market.
-- [ ] Return exposure by bookmaker.
-- [ ] Audit risk config changes.
-- [ ] Add authorization checks for SHARP-only features.
-
-### Acceptance Criteria
-
-- [ ] Risk visibility is accessible in app shell.
-- [ ] Risk config is not editable without permission.
-- [ ] SHARP features are gated server-side.
-- [ ] Risk config updates are audited.
-
----
-
-## Milestone 18 — Dashboard API
-
-### Goal
-
-Return bounded data for dashboard without raw market table clutter.
-
-### Endpoint
-
-- [ ] `GET /api/dashboard`
-
-### Tasks
-
-- [ ] Return top 3 actionable decisions.
-- [ ] Return bankroll summary.
-- [ ] Return exposure summary.
-- [ ] Return CLV summary.
-- [ ] Return recent ledger activity.
-- [ ] Return blocked market warnings.
-- [ ] Avoid returning raw unfiltered opportunities.
-- [ ] Add tests for response shape.
-- [ ] Add tests for plan-gated fields.
-
-### Acceptance Criteria
-
-- [ ] Dashboard API returns decision-ready data.
-- [ ] Response is bounded.
-- [ ] No raw unfiltered market feed is returned.
-- [ ] Plan restrictions are enforced server-side.
+- Market segments can be approved or blocked
+- Approval does not rely on ROI alone
+- Negative CLV markets can be rejected
 
 ---
 
-## Milestone 19 — Minimal Decision UI
+# Milestone 12 — CLV Analytics
 
-### Goal
+## Goal
 
-Create a controlled decision interface.
+Expose process-quality metrics without creating dashboard clutter.
 
-### Components
+## Tasks
 
-- [ ] App shell.
-- [ ] Sidebar navigation.
-- [ ] Dashboard page.
-- [ ] Decision card.
-- [ ] Risk status strip.
-- [ ] CLV summary card.
-- [ ] Bet Journal preview.
-- [ ] Manual bet form.
-- [ ] Empty states.
-- [ ] Error states.
-- [ ] Loading states.
+- [ ] Create `GET /api/clv/summary`
+- [ ] Return:
+  - average CLV
+  - CLV hit rate
+  - CLV by market
+  - CLV by bookmaker
+  - CLV by model version
+  - CLV by odds bucket
+- [ ] Add bounded query ranges
+- [ ] Add pagination or aggregation guardrails
+- [ ] Avoid raw unbounded analytics reads
 
-### Decision Card Requirements
+## Definition of Done
 
-- [ ] Show decision state.
-- [ ] Show edge.
-- [ ] Show confidence.
-- [ ] Show risk.
-- [ ] Show reasons.
-- [ ] Show no more than 3 decisions.
-- [ ] Do not show decorative icons.
-- [ ] Do not require table scanning.
-- [ ] Do not use sportsbook language.
-
-### Acceptance Criteria
-
-- [ ] User never needs to calculate.
-- [ ] User never scans a raw table to decide.
-- [ ] UI exposes only actionable decisions.
-- [ ] Maximum visible decisions is 3.
+- User can evaluate process quality
+- CLV is visible as core product metric
+- Analytics queries are bounded and performant
 
 ---
 
-## Milestone 20 — Bet Journal UI
+# Milestone 13 — Minimal App Shell
 
-### Goal
+## Goal
 
-Allow user to review execution history without turning UI into clutter.
+Create the protected product shell.
 
-### Tasks
+## Tasks
 
-- [ ] Create Bet Journal page.
-- [ ] Add paginated ledger list.
-- [ ] Add bet detail view.
-- [ ] Add manual bet logging form.
-- [ ] Add settlement form.
-- [ ] Add CSV import entry point.
-- [ ] Add CSV export action.
-- [ ] Show entry odds.
-- [ ] Show closing odds where available.
-- [ ] Show stake.
-- [ ] Show model probability.
-- [ ] Show CLV.
-- [ ] Show P/L.
-- [ ] Add filters by market, bookmaker, status.
-- [ ] Keep default view minimal.
+- [ ] Create app shell layout
+- [ ] Add sidebar navigation:
+  - Dashboard
+  - Opportunities
+  - Bet Journal
+  - Risk
+  - CLV Analytics
+  - Models
+  - Settings
+- [ ] Add server-side auth gate
+- [ ] Add plan-aware UI state
+- [ ] Add empty states
+- [ ] Add loading states
+- [ ] Add error states
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] Bet history is available.
-- [ ] Ledger is paginated.
-- [ ] User can log a manual bet.
-- [ ] User can settle a bet.
-- [ ] Ledger does not become the primary decision interface.
+- Authenticated user can access app shell
+- Unauthorized users are blocked
+- Plan limitations are shown as system state, not sales pressure
 
 ---
 
-## Milestone 21 — CLV Analytics UI
+# Milestone 14 — Decision UI
 
-### Goal
+## Goal
 
-Expose process quality, not emotional outcome review.
+Expose only actionable decisions.
 
-### Tasks
+## Tasks
 
-- [ ] Create CLV Analytics page.
-- [ ] Show average CLV.
-- [ ] Show CLV hit rate.
-- [ ] Show CLV by market.
-- [ ] Show CLV by bookmaker.
-- [ ] Show CLV by model version.
-- [ ] Show CLV by odds bucket.
-- [ ] Show recent CLV records.
-- [ ] Add warnings for negative CLV segments.
-- [ ] Keep win rate secondary.
-- [ ] Keep P/L secondary.
+- [ ] Create Decision Card component
+- [ ] Support ACCEPT state
+- [ ] Support REJECT state
+- [ ] Support WAIT state
+- [ ] Show:
+  - edge
+  - confidence
+  - risk
+  - stake
+  - reason labels
+- [ ] Enforce maximum 3 visible decisions
+- [ ] Hide or defer lower-ranked opportunities
+- [ ] Avoid raw comparison tables
+- [ ] Avoid sportsbook-style UI
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] CLV is the primary process-quality metric.
-- [ ] ROI is not presented as the primary validation signal.
-- [ ] User can identify weak market segments.
-- [ ] UI supports market rejection decisions.
-
----
-
-## Milestone 22 — Models Page
-
-### Goal
-
-Expose model context without turning decision flow into analysis clutter.
-
-### Tasks
-
-- [ ] Create Models page.
-- [ ] List active model versions.
-- [ ] List inactive model versions.
-- [ ] Show model type.
-- [ ] Show sport.
-- [ ] Show market coverage.
-- [ ] Show validation status.
-- [ ] Show data dependency warnings.
-- [ ] Mark external-feed-dependent models inactive if feed missing.
-- [ ] Show CLV by model version.
-- [ ] Show sample size by model version.
-
-### Acceptance Criteria
-
-- [ ] Multiple model versions can coexist.
-- [ ] User can see which models are active.
-- [ ] Data dependency gaps are visible.
-- [ ] Models do not clutter decision UI.
+- User never needs to calculate
+- User never scans raw odds tables to decide
+- UI shows only actionable decisions
 
 ---
 
-## Milestone 23 — Landing Page
+# Milestone 15 — Bet Journal UI
 
-### Goal
+## Goal
 
-Create a conversion page consistent with product doctrine.
+Provide ledger visibility without turning the product into a spreadsheet.
 
-### Sections
+## Tasks
 
-- [ ] Hero.
-- [ ] Dashboard preview.
-- [ ] Problem definition.
-- [ ] Ledger import → betting math workflow.
-- [ ] Feature validation.
-- [ ] PRO/SHARP/INFRA pricing.
-- [ ] Stripe CTA.
-- [ ] Dashboard CTA after settings verification.
-- [ ] Final positioning section.
+- [ ] Create Bet Journal page
+- [ ] Add manual bet form
+- [ ] Add bet history list
+- [ ] Add status labels:
+  - pending
+  - won
+  - lost
+  - void
+- [ ] Add CLV status indicator
+- [ ] Add export placeholder
+- [ ] Add import placeholder
+- [ ] Avoid table-first decision UI
 
-### Copy Rules
+## Definition of Done
 
-- [ ] No picks-selling language.
-- [ ] No guaranteed win claims.
-- [ ] No sportsbook framing.
-- [ ] No casino aesthetics.
-- [ ] No artificial urgency.
-- [ ] Emphasize CLV, risk, execution, process quality.
-
-### Acceptance Criteria
-
-- [ ] Hero includes real dashboard UI preview.
-- [ ] Pricing matches `/pricing`.
-- [ ] CTA is neutral.
-- [ ] Landing page explains what the system does with user input/import.
-- [ ] Product is positioned as execution infrastructure.
+- User can log and review bets
+- Ledger supports operational review
+- Decision flow remains separate from history review
 
 ---
 
-## Milestone 24 — Pricing Page Sync
+# Milestone 16 — Risk UI
 
-### Goal
+## Goal
 
-Ensure pricing does not contradict landing page.
+Make exposure visible and controlled.
 
-### Tasks
+## Tasks
 
-- [ ] Create or update `/pricing`.
-- [ ] Sync PRO price.
-- [ ] Sync SHARP price.
-- [ ] Sync INFRA price.
-- [ ] Remove conflicting `149€–499€/month` unless used as custom add-on range.
-- [ ] Add clear feature comparison.
-- [ ] Avoid upgrade-pressure language.
-- [ ] Link Stripe checkout to correct plan.
-- [ ] Add plan access rules to technical config.
+- [ ] Create Risk page
+- [ ] Show current bankroll
+- [ ] Show open exposure
+- [ ] Show daily risk used
+- [ ] Show remaining risk capacity
+- [ ] Show active exposure by market
+- [ ] Show risk config
+- [ ] Allow SHARP users to adjust risk config
+- [ ] Audit risk config updates
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] No conflicting prices.
-- [ ] No contradictory feature claims.
-- [ ] Stripe link maps to one plan.
-- [ ] Plan copy uses system-status framing, not hype.
-
----
-
-## Milestone 25 — SEO Metadata
-
-### Goal
-
-Make the landing page indexable and technically correct.
-
-### Tasks
-
-- [ ] Add metadata title.
-- [ ] Add metadata description.
-- [ ] Add canonical URL.
-- [ ] Add Open Graph title.
-- [ ] Add Open Graph description.
-- [ ] Add Open Graph image.
-- [ ] Add Twitter card metadata.
-- [ ] Use one clear H1.
-- [ ] Use semantic page sections.
-- [ ] Confirm no accidental `noindex`.
-
-### Target Terms
-
-```txt
-professional betting infrastructure
-sports betting execution system
-CLV betting software
-Kelly staking betting tool
-bet journal with CLV tracking
-```
-
-### Acceptance Criteria
-
-- [ ] Landing page has complete metadata.
-- [ ] Canonical URL is set.
-- [ ] Open Graph preview is controlled.
-- [ ] Page is indexable.
+- Risk visibility is system-wide
+- Risk config is protected by plan and audit logging
+- Exposure limits are understandable without manual calculation
 
 ---
 
-## Milestone 26 — Onboarding
+# Milestone 17 — Landing Page
 
-### Goal
+## Goal
 
-Get the user from account creation to usable dashboard state.
+Position the product correctly before acquisition starts.
 
-### Tasks
+## Tasks
 
-- [ ] Confirm account settings.
-- [ ] Set bankroll units.
-- [ ] Set risk configuration defaults.
-- [ ] Select plan.
-- [ ] Verify plan access.
-- [ ] Ask whether user wants manual ledger or CSV import.
-- [ ] Import CSV if provided.
-- [ ] Validate imported rows.
-- [ ] Show import summary.
-- [ ] Route user to Dashboard only after required settings exist.
+- [ ] Create landing page
+- [ ] Add hero section
+- [ ] Add real dashboard preview
+- [ ] Add problem section
+- [ ] Add system workflow:
+  - Ledger import
+  - Odds normalization
+  - Model probability
+  - Betting math
+  - Risk sizing
+  - CLV tracking
+  - Market validation
+- [ ] Add feature validation section
+- [ ] Add PRO vs SHARP comparison
+- [ ] Add INFRA as custom/future tier if needed
+- [ ] Add neutral CTA
+- [ ] Add Stripe CTA
+- [ ] Remove picks-selling language
+- [ ] Remove hype language
 
-### Required Settings
+## Definition of Done
 
-```txt
-bankroll
-max risk per bet
-Kelly multiplier
-preferred unit size
-plan
-```
-
-### Acceptance Criteria
-
-- [ ] User cannot enter execution flow without bankroll state.
-- [ ] Invalid CSV rows are rejected with clear errors.
-- [ ] Imported bets receive normalized odds.
-- [ ] Imported bets can later receive CLV.
+- Landing positions Doctore as infrastructure
+- No sportsbook/casino framing exists
+- Pricing is synced with `/pricing`
 
 ---
 
-## Milestone 27 — CSV Import/Export
+# Milestone 18 — SEO + Metadata
 
-### Goal
+## Goal
 
-Support ledger migration without compromising data quality.
+Make the landing page indexable and correctly described.
 
-### Tasks
+## Tasks
 
-- [ ] Define CSV import template.
-- [ ] Define required columns.
-- [ ] Define optional columns.
-- [ ] Validate CSV headers.
-- [ ] Validate odds.
-- [ ] Validate stake.
-- [ ] Validate market.
-- [ ] Validate timestamp.
-- [ ] Validate model probability if present.
-- [ ] Normalize bookmaker names.
-- [ ] Create row-level error report.
-- [ ] Import valid rows.
-- [ ] Reject invalid rows.
-- [ ] Export ledger to CSV.
+- [ ] Add metadata title
+- [ ] Add metadata description
+- [ ] Add canonical URL
+- [ ] Add Open Graph title
+- [ ] Add Open Graph description
+- [ ] Add Open Graph image
+- [ ] Add Twitter card metadata
+- [ ] Ensure one clear H1
+- [ ] Use semantic sections
 
-### Required CSV Columns
+## Definition of Done
 
-```txt
-placedAt
-sport
-league
-market
-selection
-bookmaker
-entryOddsDecimal
-stakeUnits
-modelProbability
-```
-
-### Acceptance Criteria
-
-- [ ] User can import valid ledger rows.
-- [ ] User receives row-level errors for invalid rows.
-- [ ] Import does not bypass validation.
-- [ ] Export includes enough data for audit.
+- Landing page has production-ready metadata
+- SEO language matches product positioning
+- No conflicting product category appears
 
 ---
 
-## Milestone 28 — Admin Review UI
+# Milestone 19 — Pricing Page Sync
 
-### Goal
+## Goal
 
-Give admin visibility without vanity dashboards.
+Remove pricing and plan ambiguity.
 
-### Tasks
+## Tasks
 
-- [ ] Create admin clients page.
-- [ ] Create admin ledger review page.
-- [ ] Create plan access review.
-- [ ] Create audit event view.
-- [ ] Create market override view.
-- [ ] Create model activation view.
-- [ ] Restrict access to admin role.
-- [ ] Add tests for non-admin access denial.
+- [ ] Create or update `/pricing`
+- [ ] Sync plan names with landing
+- [ ] Sync PRO price
+- [ ] Sync SHARP price
+- [ ] Define INFRA as custom / future
+- [ ] Attach correct Stripe link
+- [ ] Remove `149€–499€` unless used as explicit custom add-on range
+- [ ] Avoid “upgrade now” language
+- [ ] Use system-state phrasing:
+  - PRO keeps the filter active
+  - SHARP controls exposure
+  - Sizing unavailable
+  - Exposure layer inactive
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] Admin can review critical system integrity metrics.
-- [ ] Admin can inspect audit events.
-- [ ] Admin-only controls are server-gated.
-- [ ] No operational clutter unless it affects revenue, activation, or system integrity.
-
----
-
-## Milestone 29 — Test Coverage Pass
-
-### Goal
-
-Ensure core system behavior is protected before production deployment.
-
-### Required Unit Tests
-
-- [ ] Implied probability.
-- [ ] Fair odds.
-- [ ] Edge.
-- [ ] Kelly fraction.
-- [ ] Fractional Kelly cap.
-- [ ] CLV.
-- [ ] Market approval.
-- [ ] Decision reasons.
-- [ ] Risk caps.
-
-### Required Integration Tests
-
-- [ ] Manual bet creation.
-- [ ] Bankroll update.
-- [ ] Decision evaluation.
-- [ ] Bet execution.
-- [ ] Duplicate execution prevention.
-- [ ] CLV record creation.
-- [ ] Market profile recalculation.
-- [ ] Role/plan authorization.
-
-### Required E2E Tests
-
-- [ ] User logs in.
-- [ ] User configures bankroll.
-- [ ] User logs manual bet.
-- [ ] User sees bet in journal.
-- [ ] System calculates risk.
-- [ ] System creates decision.
-- [ ] User accepts decision.
-- [ ] Bet appears in ledger.
-- [ ] CLV is calculated later.
-
-### Security Tests
-
-- [ ] Client cannot read another user’s bets.
-- [ ] Client cannot write protected collections directly.
-- [ ] Free user cannot access SHARP risk tools.
-- [ ] Client cannot override CLV without admin role.
-- [ ] Project manager cannot change payment status.
-
-### Acceptance Criteria
-
-- [ ] Tests cover all critical calculation branches.
-- [ ] Tests cover role/plan restrictions.
-- [ ] Tests cover duplicate execution prevention.
-- [ ] Tests cover CLV and market approval.
+- Landing and pricing do not contradict each other
+- Stripe mapping is clear
+- Plan limitations are framed as system state
 
 ---
 
-## Milestone 30 — Production Readiness
+# Milestone 20 — Phase 1 Validation
 
-### Goal
+## Goal
 
-Prepare deployable Phase 1.
+Confirm the product works as audited betting infrastructure.
 
-### Tasks
+## Tasks
 
-- [ ] Validate environment variables.
-- [ ] Confirm Firebase project.
-- [ ] Confirm Firestore indexes.
-- [ ] Confirm Firestore rules.
-- [ ] Confirm Vercel project settings.
-- [ ] Confirm Cloud Run sidecar is not required for Phase 1 unless model inference is active.
-- [ ] Confirm Stripe link.
-- [ ] Confirm plan gates.
-- [ ] Confirm SEO metadata.
-- [ ] Run test suite.
-- [ ] Run Playwright smoke tests.
-- [ ] Review bundle size.
-- [ ] Review server-only imports.
-- [ ] Review protected routes.
+- [ ] Create test dataset of 100 manual bets
+- [ ] Log all 100 bets through the ledger
+- [ ] Attach entry odds
+- [ ] Attach model probabilities
+- [ ] Calculate edge
+- [ ] Calculate Kelly sizing
+- [ ] Settle bets
+- [ ] Attach closing odds
+- [ ] Calculate CLV
+- [ ] Recalculate market profiles
+- [ ] Confirm no direct Firestore protected writes from client
+- [ ] Confirm user never calculates manually
 
-### Acceptance Criteria
+## Definition of Done
 
-- [ ] Phase 1 can deploy without live autobet.
-- [ ] No protected data is exposed client-side.
-- [ ] No raw unfiltered feed appears in primary UI.
-- [ ] No pricing conflicts exist.
-- [ ] Core ledger → risk → CLV path works.
-
----
-
-## Final Phase 1 Definition of Done
-
-Phase 1 is complete only when:
-
-```txt
-A user can log a bet.
-Bet includes odds, stake, market, model probability, and timestamp.
-System calculates implied probability.
-System calculates fair odds.
-System calculates edge.
-System calculates Kelly fraction.
-System applies Fractional Kelly cap.
-System updates bankroll state.
-System creates market snapshots.
-System calculates CLV.
-System can approve or reject market segments.
-User never needs to calculate.
-User never scans a raw table to decide.
-UI exposes only actionable decisions.
-```
-
-Out of scope until later:
-
-```txt
-automated betting
-social feed
-leaderboards
-engagement loops
-raw market table exploration
-public betting feed dependent models
-full model retraining console
-```
+- 100+ bets can be processed end-to-end
+- CLV can be calculated at bet and market level
+- Risk sizing is enforced server-side
+- Market approval can block weak segments
+- UI remains decision-first
